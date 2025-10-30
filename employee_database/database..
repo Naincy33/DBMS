@@ -89,3 +89,75 @@ select * from incentives;
 select * from project;
 
 select * from assigned_to;
+
+
+-- NAME OF MNAGER WD MAX SALARY
+
+
+SELECT E1.empname AS MANAGER_NAME, COUNT(E2.empno) AS NUM_EMPLOYEES 
+FROM emp E1
+JOIN emp E2 ON E1.empno = E2.mgr_no
+GROUP BY E1.empname
+HAVING COUNT(E2.empno) = (
+	SELECT MAX(CNT)
+    FROM (
+		SELECT COUNT(E2.empno) AS CNT
+        FROM emp E1 JOIN emp E2 ON E1.empno = E2.mgr_no
+        GROUP BY E1.empno
+        ) AS T
+);
+
+-- manager whose salary is more thn avg saalary of it's employee
+
+SELECT DISTINCT E1.empname AS MANAGER_NAME
+FROM emp E1
+WHERE E1.SAL > (
+  SELECT AVG(E2.SAL)
+  FROM emp E2
+  WHERE E2.mgr_no = E1.empno
+);
+
+
+-- name of second top level manager from each deprtment
+
+SELECT E.empname AS SECOND_TOP_LEVEL_MANAGER, D.dname
+FROM emp E
+JOIN emp M ON E.mgr_no = M.empno
+JOIN dept D ON E.deptno = D.deptno
+WHERE M.mgr_no IS NULL;
+
+
+-- employee details who got second maximum incentives in jan 2019
+
+
+SELECT *
+FROM INCENTIVES
+WHERE incentive_date BETWEEN '2019-01-01' AND '2022-01-31'
+  AND incentive_amount = (
+    SELECT MAX(incentive_amount)
+    FROM INCENTIVES
+    WHERE incentive_date BETWEEN '2019-01-01' AND '2022-01-31'
+      AND incentive_amount < (
+        SELECT MAX(incentive_amount)
+        FROM INCENTIVES
+        WHERE incentive_date BETWEEN '2019-01-01' AND '2022-01-31'
+      )
+  );
+
+
+
+-- employes working in same department as their manager do
+
+
+SELECT E.empname AS EMPLOYEE_NAME, M.empname AS MANAGER_NAME, D.dname
+FROM emp E
+JOIN emp M ON E.mgr_no = M.empno
+JOIN dept D ON E.deptno = D.deptno
+WHERE E.deptno = M.deptno;
+
+
+
+
+
+
+
