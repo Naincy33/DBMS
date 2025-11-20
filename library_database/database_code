@@ -1,0 +1,104 @@
+create database library;
+use library;
+
+create table Students(
+student_id int(20),
+name varchar(50),
+department varchar(50),
+year int(10),
+primary key(student_id));
+
+create table Books(
+book_id int(20),
+title varchar(100),
+author varchar(50),
+category varchar(30),
+primary key(book_id));
+
+create table BorrowedBooks(
+borrow_id int(20),
+student_id int(20),
+book_id int(20),
+borrow_date date,
+return_date date,
+primary key(borrow_id),
+foreign key(student_id) references Students(student_id),
+foreign key(book_id) references Books(book_id));
+
+insert into Students values
+(1 , 'Alice', 'Compute Science', 2),
+(2, 'Bob' , 'Mechanical', 3),
+(3, 'Carol', 'Computer Science', 1),
+(4, 'David', 'Electrical' , 4);
+
+insert into Books values
+(101, 'Database Systems', 'Navathe', 'CS'),
+(102, 'Operating System', 'Silberschatz', 'CS'),
+(103, 'Physics Fundamentals', 'Halliday', 'Science'),
+(104, ' Modern Fiction', 'Orwell', 'Fiction');
+
+insert into BorrowedBooks values
+(1, 1, 101, '2024-01-10', '2024-01-20'),
+(2, 2, 103, '2024-02-01', NULL),
+(3, 3, 102, '2024-02-15', '2024-03-01'),
+(4, 1, 104, '2024-03-10', NULL);
+
+UPDATE Students
+SET department = 'Computer Science'
+WHERE student_id= 1;
+
+-- Q1. Write an SQL query to list all students who belong to the Computer Sciencedepartment.
+select student_id, name
+from Students
+where Students.department = 'Computer Science' ;
+
+-- Q2. Write an SQL query to display the titles of all books currently not returned.
+select b.title
+from Books b
+JOIN BorrowedBooks t ON b.book_id = t.book_id
+WHERE t.return_date IS NULL;
+
+-- Q3. Write an SQL query to find the names of students who borrowed books in February 2024.
+select s.name
+from Students s
+join BorrowedBooks t ON s.student_id= t.student_id
+where (t.borrow_date >= '2024-02-01' and t.borrow_date<= '2024-02-29') ;
+
+-- Q4. Write an SQL query to show the total number of books borrowed by each student.
+SELECT s.student_id, COUNT(t.book_id) AS total_books_borrowed
+FROM Students s
+JOIN BorrowedBooks t ON s.student_id = t.student_id
+GROUP BY s.student_id;
+
+-- Q5. Write an SQL query to retrieve the title, author, and student name for each borrowed book (include returned and not returned).
+select b.title, b.author, s.name AS student_name
+from Books b
+join BorrowedBooks t ON b.book_id= t.book_id
+join Students s ON t.student_id= s.student_id;
+
+-- Q6. Write an SQL query to find the book(s) borrowed the most times.
+SELECT b.title, COUNT(t.book_id) AS borrow_count
+FROM Books b
+JOIN BorrowedBooks t ON b.book_id = t.book_id
+GROUP BY b.book_id, b.title
+HAVING COUNT(t.book_id) = (
+    SELECT MAX(borrow_total)
+    FROM (
+        SELECT COUNT(book_id) AS borrow_total
+        FROM BorrowedBooks
+        GROUP BY book_id
+    ) AS borrow_stats
+);
+
+
+-- Q7. Write an SQL query to list students who have never borrowed any book.
+select s.name
+from Students s
+LEFT JOIN BorrowedBooks t ON s.student_id = t.student_id
+WHERE t.book_id IS NULL;
+
+
+-- Q8. Write an SQL query to count the number of books in each category.
+SELECT category, COUNT(*) AS total_books
+FROM Books
+GROUP BY category;
