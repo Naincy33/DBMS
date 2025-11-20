@@ -101,3 +101,92 @@ WHERE (c.pid, c.cost) IN (
     GROUP BY pid
 );
 
+SELECT sname, sid
+FROM supplier
+WHERE sid IN (
+    SELECT sid
+    FROM catalog
+    WHERE cost = (SELECT MAX(cost) FROM catalog)
+);
+
+SELECT s.sname, s.sid
+FROM supplier s
+WHERE s.sid NOT IN (
+    SELECT c.sid
+    FROM catalog c
+    WHERE c.pid IN (
+        SELECT pid
+        FROM parts
+        WHERE color = 'Red'
+    )
+);
+
+SELECT sname, sid,
+       (SELECT SUM(cost)
+        FROM catalog
+        WHERE sid = supplier.sid) AS total_value
+FROM supplier;
+
+SELECT sname, sid
+FROM supplier
+WHERE sid IN (
+    SELECT sid
+    FROM catalog
+    WHERE cost < 20
+    GROUP BY sid
+    HAVING COUNT(pid) >= 2
+);
+
+SELECT sname, sid
+FROM supplier
+WHERE sid IN (
+    SELECT sid
+    FROM catalog
+    WHERE (pid, cost) IN (
+        SELECT pid, MIN(cost)
+        FROM catalog
+        GROUP BY pid
+    )
+);
+
+CREATE VIEW supplier_part_count AS
+SELECT sid, COUNT(DISTINCT pid) AS total_parts
+FROM catalog
+GROUP BY sid;
+select * from supplier_part_count;
+
+CREATE VIEW most_expensive_supplier AS
+SELECT c.pid, p.pname, c.sid, s.sname, c.cost
+FROM catalog c
+JOIN supplier s ON c.sid = s.sid
+JOIN parts p ON c.pid = p.pid
+WHERE (c.pid, c.cost) IN (
+    SELECT pid, MAX(cost)
+    FROM catalog
+    GROUP BY pid
+);
+select * from most_expensive_supplier;
+
+delimiter $$
+CREATE TRIGGER check_catalog_cost
+BEFORE INSERT ON catalog
+FOR EACH ROW
+BEGIN
+  IF NEW.cost < 1 THEN
+    SET NEW.cost = 1;
+  END IF;
+END $$
+
+delimiter $$
+CREATE TRIGGER set_default_cost
+BEFORE INSERT ON catalog
+FOR EACH ROW
+BEGIN
+    IF NEW.cost IS NULL THEN
+        SET NEW.cost = 10;
+    END IF;
+END $$
+
+
+
+
